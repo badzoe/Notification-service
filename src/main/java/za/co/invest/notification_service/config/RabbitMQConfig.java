@@ -1,5 +1,6 @@
 package za.co.invest.notification_service.config;
 
+import lombok.AllArgsConstructor;
 import org.springframework.amqp.core.*;
 import org.springframework.amqp.rabbit.connection.CachingConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
@@ -13,41 +14,37 @@ import za.co.invest.notification_service.controller.AsyncController;
 import java.io.IOException;
 
 @Configuration
+@AllArgsConstructor
 public class RabbitMQConfig {
 
     private final CachingConnectionFactory cachingConnectionFactory;
 
-    @Autowired
-    public RabbitMQConfig(CachingConnectionFactory cachingConnectionFactory) {
-        this.cachingConnectionFactory = cachingConnectionFactory;
-    }
-
     @Bean
-    public RabbitAdmin rabbitAdmin() throws IOException {
+    public RabbitAdmin rabbitAdmin() {
         RabbitAdmin admin = new RabbitAdmin(cachingConnectionFactory);
         admin.declareQueue(createNotificationsQueue());
         admin.declareExchange(notificationsServiceExchange());
         admin.declareBinding(notificationsBinding());
-        admin.initialize(); // Might throw IOException if RabbitMQ is unreachable
+        admin.initialize(); // Optional; initializes the RabbitAdmin if not done already
         return admin;
     }
 
     @Bean
     public Queue createNotificationsQueue() {
-        return new Queue("ZW.TMS.OPENIT" + "." + "EMAILNOTIFICATIONS", true, false, false);
+        return new Queue("zw.test.test.emails", true, false, false);
     }
 
     @Bean
     public Binding notificationsBinding() {
-        return BindingBuilder.
-                bind(createNotificationsQueue()).
-                to(notificationsServiceExchange()).
-                with("ZW.TMS.OPENIT" + "." + "EMAILNOTIFICATIONS");
+        return BindingBuilder
+                .bind(createNotificationsQueue())
+                .to(notificationsServiceExchange())
+                .with("zw.test.test.emails");
     }
 
     @Bean
     public TopicExchange notificationsServiceExchange() {
-        return new TopicExchange("MUTANGABENDETECHNOLOGIES" + "." + "ZW.TMS.OPENIT" + "." + "EMAILNOTIFICATIONS");
+        return new TopicExchange("MUTANGABENDETECHNOLOGIES.zw.test.test.emails");
     }
 
     @Bean
@@ -59,7 +56,7 @@ public class RabbitMQConfig {
     public SimpleMessageListenerContainer listenerContainer(AsyncController asyncController) {
         SimpleMessageListenerContainer listenerContainer = new SimpleMessageListenerContainer();
         listenerContainer.setConnectionFactory(cachingConnectionFactory);
-        listenerContainer.setQueueNames("ZW.TMS.OPENIT" + "." + "EMAILNOTIFICATIONS");
+        listenerContainer.setQueueNames("zw.test.test" + "." + "emails");
         listenerContainer.setMessageListener(asyncController);
         listenerContainer.setAcknowledgeMode(AcknowledgeMode.MANUAL);
         listenerContainer.setConcurrency("1");
